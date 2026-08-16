@@ -83,6 +83,16 @@ export class SharpTimerRepository {
     return rows.map(toRecordRow);
   }
 
+  /**
+   * The most recently improved personal bests across all maps, newest first.
+   * SharpTimer only stores the current PB per player+map, so this is a feed of
+   * PB improvements, not a full run history.
+   */
+  async getRecentRecords(limit: number): Promise<RecordRow[]> {
+    const rows = await this.recordsQuery().orderBy('LastFinished', 'desc').limit(limit).execute();
+    return rows.map(toRecordRow);
+  }
+
   /** Every map and bonus that has at least one counting record. */
   async listMaps(): Promise<MapInfo[]> {
     const rows = await this.db
