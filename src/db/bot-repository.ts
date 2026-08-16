@@ -38,6 +38,17 @@ export class BotRepository {
     return { discordId: row.discord_id, steamId64: row.steam_id64, linkedAt: row.linked_at };
   }
 
+  /** All links, e.g. for the role sync. Order is unspecified. */
+  async listSteamLinks(): Promise<SteamLink[]> {
+    await this.migrations.run();
+    const rows = await this.db.selectFrom('bot_steam_links').selectAll().execute();
+    return rows.map((row) => ({
+      discordId: row.discord_id,
+      steamId64: row.steam_id64,
+      linkedAt: row.linked_at,
+    }));
+  }
+
   /**
    * Creates or replaces the user's link. Returns the SteamID64 the user was
    * linked to before, or null if this is a new link.

@@ -1,4 +1,13 @@
 export { Scheduler, type SchedulerOptions } from './scheduler.js';
+export { BUNDLED_GROUPS, isManagedRoleName, roleForRank, type RoleSpec } from './rank-roles.js';
+export {
+  createGuildFetcher,
+  RoleSyncer,
+  type SteamLinkStore,
+  type SyncGuild,
+  type SyncMember,
+  type SyncRole,
+} from './role-sync.js';
 export {
   buildLeaderboardEmbed,
   buildLeaderboardView,

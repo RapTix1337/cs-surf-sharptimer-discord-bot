@@ -11,7 +11,13 @@ import { Bot } from './discord/bot.js';
 import { createCommands } from './discord/commands/index.js';
 import { logger } from './logger.js';
 import { buildRanking, scoreMaps } from './scoring/index.js';
-import { createLeaderboardChannelFetcher, LeaderboardUpdater, Scheduler } from './sync/index.js';
+import {
+  createGuildFetcher,
+  createLeaderboardChannelFetcher,
+  LeaderboardUpdater,
+  RoleSyncer,
+  Scheduler,
+} from './sync/index.js';
 
 dotenv.config({ quiet: true });
 
@@ -60,15 +66,31 @@ async function main(): Promise<void> {
     botRepository,
     createLeaderboardChannelFetcher(bot.discordClient, config.discord.leaderboardChannelId),
   );
+  const roleSyncer = config.roles.enabled
+    ? new RoleSyncer(
+        botRepository,
+        createGuildFetcher(bot.discordClient, config.discord.guildId),
+        config.roles,
+      )
+    : null;
   const scheduler = new Scheduler(
     async () => {
       const records = await repository.getAllRecords();
       const maps = scoreMaps(records, config.scoring);
       const ranking = buildRanking(maps);
       const bonusCount = maps.filter((map) => map.isBonus).length;
-      await leaderboard.update(ranking, { mapCount: maps.length - bonusCount, bonusCount });
+      // A leaderboard hiccup (e.g. a misconfigured channel) must not block
+      // the role sync, so the two halves of the tick fail independently.
+      try {
+        await leaderboard.update(ranking, { mapCount: maps.length - bonusCount, bonusCount });
+      } catch (error) {
+        logger.error('Leaderboard update failed — skipping it this run.', error);
+      }
+      if (roleSyncer) {
+        await roleSyncer.sync(ranking);
+      }
     },
-    { intervalSeconds: config.sync.intervalSeconds, name: 'Leaderboard sync' },
+    { intervalSeconds: config.sync.intervalSeconds, name: 'Sync' },
   );
 
   let shuttingDown = false;
