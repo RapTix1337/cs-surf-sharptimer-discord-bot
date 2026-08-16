@@ -10,6 +10,8 @@ import {
 import { Bot } from './discord/bot.js';
 import { createCommands } from './discord/commands/index.js';
 import { logger } from './logger.js';
+import { buildRanking, scoreMaps } from './scoring/index.js';
+import { createLeaderboardChannelFetcher, LeaderboardUpdater, Scheduler } from './sync/index.js';
 
 dotenv.config({ quiet: true });
 
@@ -54,6 +56,21 @@ async function main(): Promise<void> {
     createCommands({ repository, botRepository, scoringConfig: config.scoring }),
   );
 
+  const leaderboard = new LeaderboardUpdater(
+    botRepository,
+    createLeaderboardChannelFetcher(bot.discordClient, config.discord.leaderboardChannelId),
+  );
+  const scheduler = new Scheduler(
+    async () => {
+      const records = await repository.getAllRecords();
+      const maps = scoreMaps(records, config.scoring);
+      const ranking = buildRanking(maps);
+      const bonusCount = maps.filter((map) => map.isBonus).length;
+      await leaderboard.update(ranking, { mapCount: maps.length - bonusCount, bonusCount });
+    },
+    { intervalSeconds: config.sync.intervalSeconds, name: 'Leaderboard sync' },
+  );
+
   let shuttingDown = false;
   const shutdown = (signal: string): void => {
     if (shuttingDown) {
@@ -61,14 +78,17 @@ async function main(): Promise<void> {
     }
     shuttingDown = true;
     logger.info(`Received ${signal}, shutting down...`);
-    void Promise.allSettled([bot.stop(), db.destroy()]).then(() => {
+    void (async () => {
+      await scheduler.stop();
+      await Promise.allSettled([bot.stop(), db.destroy()]);
       process.exit(0);
-    });
+    })();
   };
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));
 
   await bot.start();
+  scheduler.start();
 }
 
 main().catch((error: unknown) => {

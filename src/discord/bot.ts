@@ -9,6 +9,7 @@ const GENERIC_ERROR_REPLY = 'Something went wrong while running this command. Pl
 export class Bot {
   private readonly client: Client;
   private readonly commands = new Map<string, Command>();
+  private readonly ready: Promise<void>;
 
   constructor(
     private readonly config: Config['discord'],
@@ -19,8 +20,11 @@ export class Bot {
     }
 
     this.client = new Client({ intents: [GatewayIntentBits.Guilds] });
-    this.client.once(Events.ClientReady, (client) => {
-      void this.onReady(client);
+    this.ready = new Promise((resolve) => {
+      this.client.once(Events.ClientReady, (client) => {
+        resolve();
+        void this.onReady(client);
+      });
     });
     this.client.on(Events.InteractionCreate, (interaction) => {
       void this.onInteraction(interaction);
@@ -30,8 +34,15 @@ export class Bot {
     });
   }
 
+  /** The underlying discord.js client, for consumers outside the command flow. */
+  get discordClient(): Client {
+    return this.client;
+  }
+
+  /** Resolves once the client is logged in and ready. */
   async start(): Promise<void> {
     await this.client.login(this.config.token);
+    await this.ready;
   }
 
   async stop(): Promise<void> {
