@@ -3,8 +3,7 @@ import type { BotRepository, SharpTimerRepository } from '../../db/index.js';
 import type { ScoringConfig } from '../../scoring/index.js';
 import { buildRanking, scoreMaps } from '../../scoring/index.js';
 import type { Command } from '../command.js';
-
-const EMBED_COLOR = 0xf1c40f;
+import { EMBED_COLOR, resolveLinkedUser, userOption } from './helpers.js';
 
 export interface RankCommandDependencies {
   repository: SharpTimerRepository;
@@ -21,32 +20,25 @@ export function createRankCommand({
     data: new SlashCommandBuilder()
       .setName('rank')
       .setDescription('Show a player’s global rank, points and completion.')
-      .addUserOption((option) =>
-        option.setName('user').setDescription('Whose rank to show (default: yours)'),
-      ),
+      .addUserOption(userOption('user', 'Whose rank to show (default: yours)')),
     async execute(interaction) {
-      const target = interaction.options.getUser('user') ?? interaction.user;
-      const isSelf = target.id === interaction.user.id;
       await interaction.deferReply();
 
-      const link = await botRepository.getSteamLink(target.id);
-      if (!link) {
-        await interaction.editReply(
-          isSelf
-            ? 'You have not linked a Steam account yet. Use /link to connect one.'
-            : `${target.displayName} has not linked a Steam account yet — they can use /link to connect one.`,
-        );
+      const resolved = await resolveLinkedUser(interaction, botRepository);
+      if (!resolved.ok) {
+        await interaction.editReply(resolved.message);
         return;
       }
+      const { user, isSelf, steamId64 } = resolved.player;
 
       const records = await repository.getAllRecords();
       const ranking = buildRanking(scoreMaps(records, scoringConfig));
-      const entry = ranking.find((candidate) => candidate.steamId === link.steamId64);
+      const entry = ranking.find((candidate) => candidate.steamId === steamId64);
       if (!entry) {
         await interaction.editReply(
           isSelf
             ? 'You have no counted records yet — finish a map to enter the ranking!'
-            : `${target.displayName} has no counted records yet.`,
+            : `${user.displayName} has no counted records yet.`,
         );
         return;
       }
