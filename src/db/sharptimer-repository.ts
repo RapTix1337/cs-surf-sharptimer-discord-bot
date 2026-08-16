@@ -1,6 +1,7 @@
 import type { Kysely } from 'kysely';
+import type { Database } from './database.js';
 import { isBonusMap } from './map-name.js';
-import type { PlayerRecordsTable, SharpTimerDatabase, SharpTimerTableName } from './schema.js';
+import type { PlayerRecordsTable, SharpTimerTableName } from './schema.js';
 
 export interface RecordRow {
   mapName: string;
@@ -35,7 +36,7 @@ export interface SharpTimerRepositoryOptions {
  */
 export class SharpTimerRepository {
   constructor(
-    private readonly db: Kysely<SharpTimerDatabase>,
+    private readonly db: Kysely<Database>,
     private readonly options: SharpTimerRepositoryOptions,
   ) {}
 
@@ -93,6 +94,16 @@ export class SharpTimerRepository {
       .orderBy('MapName', 'asc')
       .execute();
     return rows.map((row) => ({ mapName: row.MapName, isBonus: isBonusMap(row.MapName) }));
+  }
+
+  /** The in-game name SharpTimer has stored for the player, if any. */
+  async getPlayerName(steamId: string): Promise<string | null> {
+    const row = await this.db
+      .selectFrom(this.table('PlayerStats'))
+      .select('PlayerName')
+      .where('SteamID', '=', steamId)
+      .executeTakeFirst();
+    return row?.PlayerName ?? null;
   }
 }
 
