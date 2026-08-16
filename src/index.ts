@@ -1,7 +1,12 @@
 import dotenv from 'dotenv';
 import type { Config } from './config/index.js';
 import { ConfigError, loadConfig } from './config/index.js';
-import { createDatabase, SharpTimerRepository } from './db/index.js';
+import {
+  BotMigrationRunner,
+  BotRepository,
+  createDatabase,
+  SharpTimerRepository,
+} from './db/index.js';
 import { Bot } from './discord/bot.js';
 import { createCommands } from './discord/commands/index.js';
 import { logger } from './logger.js';
@@ -27,21 +32,26 @@ async function main(): Promise<void> {
     mode: config.records.mode,
   });
 
+  const migrationRunner = new BotMigrationRunner(db);
+  const botRepository = new BotRepository(db, migrationRunner);
+
   // Startup smoke check — the bot stays up even if the database is not
-  // reachable yet; queries are retried naturally on the next use.
+  // reachable yet; queries are retried naturally on the next use, and the
+  // bot repository re-runs pending migrations on first successful access.
   try {
+    await migrationRunner.run();
     const maps = await repository.listMaps();
     const bonusCount = maps.filter((map) => map.isBonus).length;
     logger.info(
-      `SharpTimer database reachable: ${maps.length - bonusCount} map(s), ${bonusCount} bonus(es) with records.`,
+      `Database reachable: ${maps.length - bonusCount} map(s), ${bonusCount} bonus(es) with records.`,
     );
   } catch (error) {
-    logger.warn('SharpTimer database is not reachable yet — continuing anyway.', error);
+    logger.warn('Database is not reachable yet — continuing anyway.', error);
   }
 
   const bot = new Bot(
     config.discord,
-    createCommands({ repository, scoringConfig: config.scoring }),
+    createCommands({ repository, botRepository, scoringConfig: config.scoring }),
   );
 
   let shuttingDown = false;
