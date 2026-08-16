@@ -24,7 +24,7 @@ export interface SharpTimerRepositoryOptions {
   tablePrefix: string;
   /** Only records with this style count (0 = normal). */
   style: number;
-  /** Only records with this mode count (SharpTimer's default mode stores ''). */
+  /** Only records with this mode count (SharpTimer's default mode stores 'Standard'). */
   mode: string;
 }
 

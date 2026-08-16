@@ -41,7 +41,7 @@ const envSchema = z.object({
 
   // Which SharpTimer records count towards the ranking
   RECORDS_STYLE: z.coerce.number().int().min(0).default(0),
-  RECORDS_MODE: z.string().default(''),
+  RECORDS_MODE: z.string().default('Standard'),
 
   // Scoring parameters
   SCORING_BASE_POINTS: z.coerce.number().min(0).default(20),

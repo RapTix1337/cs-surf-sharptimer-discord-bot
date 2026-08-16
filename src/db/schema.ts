@@ -25,7 +25,7 @@ export interface PlayerRecordsTable {
   LastFinished: number;
   /** 0 = normal; other styles are ignored by the bot. */
   Style: number;
-  /** Empty string on SharpTimer's default mode. */
+  /** The column default is '', but SharpTimer writes 'Standard' for its default mode. */
   Mode: string;
 }
 

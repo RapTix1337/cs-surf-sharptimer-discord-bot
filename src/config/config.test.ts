@@ -28,7 +28,7 @@ describe('loadConfig', () => {
       tablePrefix: '',
     });
 
-    expect(config.records).toEqual({ style: 0, mode: '' });
+    expect(config.records).toEqual({ style: 0, mode: 'Standard' });
 
     expect(config.scoring).toEqual({
       basePoints: 20,
