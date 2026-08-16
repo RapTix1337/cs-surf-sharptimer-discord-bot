@@ -1,0 +1,6 @@
+# The bot only — it connects to your existing SharpTimer database.
+services:
+  bot:
+    build: .
+    env_file: .env
+    restart: unless-stopped

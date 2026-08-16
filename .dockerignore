@@ -1,0 +1,7 @@
+node_modules/
+dist/
+internal-docs/
+.env
+.git/
+.*/
+*.md
