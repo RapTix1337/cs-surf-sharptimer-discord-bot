@@ -3,7 +3,7 @@ import type { Config } from './config/index.js';
 import { ConfigError, loadConfig } from './config/index.js';
 import { createDatabase, SharpTimerRepository } from './db/index.js';
 import { Bot } from './discord/bot.js';
-import { commands } from './discord/commands/index.js';
+import { createCommands } from './discord/commands/index.js';
 import { logger } from './logger.js';
 
 dotenv.config({ quiet: true });
@@ -39,7 +39,10 @@ async function main(): Promise<void> {
     logger.warn('SharpTimer database is not reachable yet — continuing anyway.', error);
   }
 
-  const bot = new Bot(config.discord, commands);
+  const bot = new Bot(
+    config.discord,
+    createCommands({ repository, scoringConfig: config.scoring }),
+  );
 
   let shuttingDown = false;
   const shutdown = (signal: string): void => {
