@@ -22,7 +22,7 @@ export function createDialect(config: DatabaseConfig): Dialect {
       });
     case 'mysql':
       logger.warn(
-        'MySQL support is experimental and not fully tested yet — PostgreSQL is recommended.',
+        'MySQL support is experimental — it is smoke-tested against MySQL 8 but sees far less use than PostgreSQL.',
       );
       return new MysqlDialect({
         pool: createPool({
