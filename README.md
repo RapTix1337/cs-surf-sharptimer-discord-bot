@@ -56,8 +56,11 @@ rank roles.
    with the `bot` and `applications.commands` scopes and these bot
    permissions:
    - **Manage Roles** (for the rank roles)
-   - **View Channels**, **Send Messages**, **Embed Links** (for the
-     leaderboard channel)
+   - **View Channels**, **Send Messages**, **Embed Links**,
+     **Read Message History** (for the leaderboard channel)
+
+   That combination is the permissions integer `268520448`.
+
 5. Open the invite URL and add the bot to your server.
 6. In Discord, enable **Settings → Advanced → Developer Mode**, then
    right-click your server → **Copy Server ID** (`DISCORD_GUILD_ID`) and the
