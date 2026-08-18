@@ -109,6 +109,19 @@ Fill in the values. Every option is documented in
 | `ROLES_COLORS`                   | `#ffd700,#c0c0c0,#cd7f32` | Colors for the roles in rank order; roles beyond the list stay colorless.                                    |
 | `ROLES_HOIST`                    | `false`                   | Show role members separately in the member list.                                                             |
 
+Values containing a `#` must be quoted, because an unquoted `#` starts a
+comment in a `.env` file. This affects `ROLES_NAME_TEMPLATE` and
+`ROLES_COLORS`:
+
+```
+ROLES_NAME_TEMPLATE="Surf #{rank}"
+ROLES_COLORS="#ffd700,#c0c0c0,#cd7f32"
+```
+
+Without the quotes the template silently becomes `Surf`, and every ranked
+player ends up with the same role. The bot logs a warning on startup when the
+template has no `{rank}` placeholder.
+
 The bot creates its own tables (`bot_steam_links`, `bot_messages`,
 `bot_migrations`) in the same database on first start. SharpTimer's tables are
 never written to.

@@ -66,6 +66,17 @@ async function main(): Promise<void> {
     botRepository,
     createLeaderboardChannelFetcher(bot.discordClient, config.discord.leaderboardChannelId),
   );
+  // A template without the placeholder gives every ranked player the same role
+  // name. The usual cause is an unquoted ROLES_NAME_TEMPLATE in .env, where the
+  // # of "Surf #{rank}" starts a comment and truncates the value to "Surf".
+  if (config.roles.enabled && !config.roles.nameTemplate.includes('{rank}')) {
+    logger.warn(
+      `ROLES_NAME_TEMPLATE is "${config.roles.nameTemplate}" and has no {rank} placeholder, ` +
+        'so every ranked player gets the same role. If your .env reads ' +
+        'ROLES_NAME_TEMPLATE=Surf #{rank}, quote it as "Surf #{rank}".',
+    );
+  }
+
   const roleSyncer = config.roles.enabled
     ? new RoleSyncer(
         botRepository,
